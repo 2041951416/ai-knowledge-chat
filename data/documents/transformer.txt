@@ -1,0 +1,1 @@
+Transformer是一种基于自注意力机制的神经网络架构，由Vaswani等人于2017年提出。它彻底改变了自然语言处理领域，是GPT、BERT、T5等模型的基础。Transformer的核心创新包括：多头自注意力机制（Multi-Head Attention）和前馈神经网络（FFN），以及位置编码（Positional Encoding）。
