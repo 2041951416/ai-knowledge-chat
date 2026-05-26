@@ -19,6 +19,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[str] = []
+    note: str = ""
 
 
 @app.get("/health")
@@ -30,7 +31,11 @@ async def health():
 async def chat(req: ChatRequest):
     if req.use_rag:
         result = await ask_rag(req.query, history=req.history or None)
-        return ChatResponse(answer=result["answer"], sources=result["sources"])
+        return ChatResponse(
+            answer=result["answer"],
+            sources=result.get("sources", []),
+            note=result.get("note", ""),
+        )
     else:
         answer = await ask_direct(req.query, history=req.history or None)
         return ChatResponse(answer=answer)
@@ -48,10 +53,9 @@ async def upload_file(file: UploadFile = File(...)):
 
     # 只索引新文件（不清空）
     text = load_and_chunk(str(save_dir), single_file=file.filename)
-    if text is None:
-        return {"message": f"无法解析文件 {file.filename}，请使用 TXT/PDF/DOCX/MD 格式"}
-
     chunks, metadata = text
+    if not chunks:
+        return {"message": f"无法解析文件 {file.filename}，请使用 TXT/PDF/DOCX/MD 格式"}
     store = get_store()
     count = store.add_documents(chunks, metadata)
 

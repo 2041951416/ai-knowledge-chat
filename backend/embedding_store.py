@@ -48,9 +48,12 @@ class VectorStore:
         docs = []
         if results["documents"]:
             for i, doc in enumerate(results["documents"][0]):
+                # ChromaDB 余弦距离范围 [0,2]，转为相似度 [-1, 1]
+                dist = results["distances"][0][i] if results.get("distances") else 1
+                sim = round(1 - dist, 4)
                 docs.append({
                     "content": doc,
-                    "score": round(1 - results["distances"][0][i], 4) if results.get("distances") else 0,
+                    "score": sim,
                     "metadata": results["metadatas"][0][i] if results.get("metadatas") else {},
                 })
         return docs

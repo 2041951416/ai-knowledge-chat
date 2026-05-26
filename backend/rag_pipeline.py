@@ -44,21 +44,35 @@ async def ask_rag(query: str, history: list[dict] | None = None) -> dict:
     store = get_store()
 
     if store.count() == 0:
-        return {"answer": "知识库为空，请先上传文档。", "sources": []}
+        # 知识库为空 → 回退到直接对话
+        answer = await ask_direct(query, history)
+        return {"answer": answer, "sources": []}
 
     # 1. 语义检索
     docs = store.search(query, top_k=TOP_K_RESULTS)
 
-    # 2. 构建上下文
+    # 2. 判断是否需要 RAG（相似度 > 0 表示至少有一定相关性）
+    has_relevant = any(d["score"] > 0.15 for d in docs)
+
+    if not has_relevant:
+        # 没有相关内容 → 回退到直接对话
+        answer = await ask_direct(query, history)
+        return {
+            "answer": answer,
+            "sources": [],
+            "note": "未在知识库中找到相关内容，以上为模型自身回答",
+        }
+
+    # 3. 构建上下文
     context = build_context(docs)
 
-    # 3. 构建带历史的 messages
+    # 4. 构建带历史的 messages
     messages = build_messages(query, context, history)
 
-    # 4. 调用 LLM
+    # 5. 调用 LLM
     answer = await call_llm(messages)
 
-    # 5. 提取来源
+    # 6. 提取来源
     sources = list(set(
         d["metadata"].get("source", "未知来源")
         for d in docs if d.get("metadata")

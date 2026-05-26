@@ -3,7 +3,7 @@ import streamlit as st
 import requests
 from pathlib import Path
 
-API_BASE = "http://localhost:8000"
+API_BASE = "http://localhost:8001"
 
 st.set_page_config(page_title="AI 知识库", page_icon="📚", layout="wide")
 st.title("📚 AI 个人知识库")
@@ -11,6 +11,8 @@ st.title("📚 AI 个人知识库")
 # ─── 初始化 session 状态 ───
 if "messages" not in st.session_state:
     st.session_state.messages = []  # [{"role":..., "content":..., "sources":...}]
+if "uploaded_files" not in st.session_state:
+    st.session_state.uploaded_files = set()  # 已上传的文件名集合
 
 
 def chat_history() -> list[dict]:
@@ -29,7 +31,7 @@ with st.sidebar:
     uploaded_file = st.file_uploader(
         "上传文档（TXT/PDF/DOCX/MD）", type=["txt", "pdf", "docx", "md"]
     )
-    if uploaded_file is not None:
+    if uploaded_file is not None and uploaded_file.name not in st.session_state.uploaded_files:
         with st.status("正在上传并索引...", expanded=True) as status:
             try:
                 resp = requests.post(
@@ -40,6 +42,7 @@ with st.sidebar:
                 if resp.ok:
                     data = resp.json()
                     st.success(f"✅ {data['message']}")
+                    st.session_state.uploaded_files.add(uploaded_file.name)
                 else:
                     st.error(f"❌ 上传失败: {resp.text}")
             except requests.exceptions.ConnectionError:
@@ -137,7 +140,11 @@ if prompt := st.chat_input("输入你的问题..."):
                 data = resp.json()
                 answer = data["answer"]
                 sources = data.get("sources", [])
-                placeholder.markdown(answer)
+                note = data.get("note", "")
+                display = answer
+                if note:
+                    display += f"\n\n> 💡 *{note}*"
+                placeholder.markdown(display)
                 if sources:
                     with st.expander("📎 来源"):
                         for s in sources:
