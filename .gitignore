@@ -1,27 +1,27 @@
+# 环境变量（含 API Key，禁止提交！）
+.env
+
 # Python
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
 *.egg-info/
 dist/
 build/
 
-# 虚拟环境
-venv/
-.venv/
+# 向量库数据（自动生成）
+data/chroma_db/
 
 # IDE
-.idea/
 .vscode/
-*.swp
-
-# 本地方块库数据
-data/chroma_db/
-chroma_db/
+.idea/
 
 # OS
-.DS_Store
 Thumbs.db
+.DS_Store
 
-# 临时文件
-*.tmp
-*.temp
+# 用户上传的文档（示例文件除外）
+data/documents/*.doc
+data/documents/*.docx
+data/documents/*.txt
+data/documents/*.pdf
